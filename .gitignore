@@ -15,3 +15,10 @@ logs/
 .DS_Store
 Thumbs.db
 .git/
+
+# Kafka 运行时数据（误纳入跟踪，运行即不断 churn）
+kafka-logs/
+
+# 集成期诊断 / 数据修复脚本
+fix-stock-data.py
+verify-names.py
