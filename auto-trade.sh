@@ -23,9 +23,9 @@ echo "========================================"
 echo "  自动交易模拟器启动"
 echo "  账户: ${#ACCOUNTS[@]}个 | 股票: ${#STOCKS[@]}只"
 echo "  频率: 每1~3秒一笔 | 按Ctrl+C停止"
-echo "  等待Kafka就绪(30s)..."
+echo "  等待Kafka就绪(60s)..."
 echo "========================================"
-sleep 30
+sleep 60
 
 round=0
 buy_count=0
