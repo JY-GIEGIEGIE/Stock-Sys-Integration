@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交易系统管理</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+    <div>
+        <div class="brand">交易系统管理</div>
+        <div class="subtitle">Stock Trading Management Console</div>
+    </div>
+    <button id="logoutBtn" class="ghost hidden">退出</button>
+</header>
+
+<main>
+    <section id="loginView" class="login-panel">
+        <div class="auth-tabs">
+            <button id="showLoginBtn" class="tab active" type="button">登录</button>
+            <button id="showRegisterBtn" class="tab" type="button">注册</button>
+        </div>
+        <h1 id="authTitle">管理员登录</h1>
+        <label>用户名
+            <input id="username" value="admin" autocomplete="username">
+        </label>
+        <label>密码
+            <input id="password" value="admin123" type="password" autocomplete="current-password">
+        </label>
+        <label id="confirmPasswordLabel" class="hidden">确认密码
+            <input id="confirmPassword" type="password" autocomplete="new-password">
+        </label>
+        <button id="loginBtn">登录</button>
+        <button id="registerBtn" class="hidden">注册并进入</button>
+        <p id="loginMessage" class="message"></p>
+    </section>
+
+    <section id="dashboardView" class="dashboard hidden">
+        <aside class="sidebar">
+            <div class="panel-title">授权股票</div>
+            <div id="stockList" class="stock-list"></div>
+        </aside>
+
+        <section class="content">
+            <div id="stockDetail" class="stock-detail empty">请选择一只股票</div>
+
+            <section class="review-section">
+                <div class="section-header">
+                    <h2>待人工核验</h2>
+                    <button id="refreshReviewsBtn" class="ghost">刷新</button>
+                </div>
+                <div id="reviewTable"></div>
+            </section>
+
+            <section class="blacklist-section">
+                <div class="section-header">
+                    <h2>交易黑名单</h2>
+                    <button id="refreshBlacklistBtn" class="ghost">刷新</button>
+                </div>
+                <form id="blacklistForm" class="blacklist-form">
+                    <input id="blackIdCardNo" placeholder="身份证号（主键）" required>
+                    <input id="blackUserName" placeholder="投资者姓名">
+                    <input id="blackFundNo" placeholder="资金账户号">
+                    <input id="blackSecurityNo" placeholder="证券账户号">
+                    <input id="blackReason" placeholder="限制原因">
+                    <button>加入黑名单</button>
+                </form>
+                <div id="blacklistTable"></div>
+            </section>
+
+            <section class="account-control-section">
+                <div class="section-header"><h2>账户冻结与解冻</h2></div>
+                <form id="accountControlForm" class="account-control-form">
+                    <select id="accountType"><option value="FUND">资金账户</option><option value="SECURITY">证券账户</option></select>
+                    <input id="controlAccountNo" placeholder="账户号" required>
+                    <select id="freezeType"><option value="VIOLATION">违规冻结</option><option value="LOSS">挂失冻结</option></select>
+                    <input id="freezeReason" placeholder="操作原因">
+                    <button type="button" id="freezeAccountBtn">冻结</button>
+                    <button type="button" id="unfreezeAccountBtn" class="ghost">解冻</button>
+                </form>
+            </section>
+
+            <section id="adminUsersSection" class="admin-section hidden">
+                <div class="section-header"><h2>管理员权限</h2><button id="refreshUsersBtn" class="ghost">刷新</button></div>
+                <div id="adminUsersTable"></div>
+            </section>
+
+            <section id="auditSection" class="admin-section hidden">
+                <div class="section-header"><h2>审计日志</h2><button id="refreshAuditBtn" class="ghost">刷新</button></div>
+                <div id="auditTable"></div>
+            </section>
+        </section>
+    </section>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>

@@ -99,6 +99,7 @@ const router = useRouter()
 const keyword = ref('')
 const searchResults = ref([])
 const quotes = ref([])
+const stockCodes = ref([])  // 缓存股票列表，首次加载后不再重新拉
 const isSearching = ref(false)
 const isLoadingQuotes = ref(false)
 
@@ -142,35 +143,34 @@ const normalizeQuote = (item, fallbackCode) => {
 }
 
 const loadQuotes = async () => {
-  isLoadingQuotes.value = true
+  // 仅首次加载显示loading，后续静默刷新
+  if (!quotes.value.length) {
+    isLoadingQuotes.value = true
+  }
 
   try {
-    // 从后端拉取全量股票列表
-    const allStocks = await searchStock('')
-    const stockList = Array.isArray(allStocks) ? allStocks : allStocks?.data || []
+    // 仅首次拉取全量股票列表
+    if (!stockCodes.value.length) {
+      const allStocks = await searchStock('')
+      const stockList = Array.isArray(allStocks) ? allStocks : allStocks?.data || []
+      stockCodes.value = stockList.map(s => ({ code: s.stockCode || s.stock_code, name: s.stockName || s.stock_name || '—' }))
+    }
 
-    if (!stockList.length) {
+    if (!stockCodes.value.length) {
       quotes.value = defaultQuotes
       return
     }
 
-    const list = []
-    for (const item of stockList) {
-      const code = item.stockCode || item.stock_code
-      try {
-        const quote = await getQuote(code)
-        list.push(normalizeQuote(quote, code))
-      } catch {
-        list.push({
-          stock_code: code,
-          stock_name: item.stockName || item.stock_name || '—',
-          last_price: 0,
-          change_rate: 0
-        })
-      }
-    }
-
-    quotes.value = list
+    // 并行拉取所有行情
+    const results = await Promise.allSettled(
+      stockCodes.value.map(item => getQuote(item.code).then(q => normalizeQuote(q, item.code)).catch(() => ({
+        stock_code: item.code,
+        stock_name: item.name,
+        last_price: 0,
+        change_rate: 0
+      })))
+    )
+    quotes.value = results.map(r => r.status === 'fulfilled' ? r.value : { stock_code: '', stock_name: '—', last_price: 0, change_rate: 0 })
   } finally {
     isLoadingQuotes.value = false
   }
