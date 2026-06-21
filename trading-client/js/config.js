@@ -37,5 +37,5 @@ const API_CONFIG = {
     clientNotifications: "/api/client/notifications",
     clientNotification: "/api/client/notifications/{notificationId}",
   },
-  timeoutMs: 5000,
+  timeoutMs: 10000,
 };
