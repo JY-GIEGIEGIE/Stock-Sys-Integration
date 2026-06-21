@@ -40,7 +40,7 @@ set JAVA_HOME=E:\stock-system\online-info-publish\jdk-17.0.12+7
 
 start "中央交易:8082" cmd /c "set DB_USER=root&&set DB_PASSWORD=root&&set DB_HOST=localhost&&set DB_PORT=3306&&set DB_DATABASE=central_trading&&%JAVA_HOME%\bin\java -jar E:\stock-system\central-trading\target\central-trading-1.0.0-SNAPSHOT.jar"
 start "账户系统:8080" cmd /c "set ACCOUNT_DB_USERNAME=root&&set ACCOUNT_DB_PASSWORD=root&&%JAVA_HOME%\bin\java -jar E:\stock-system\account-management\target\account-management-1.0.0-SNAPSHOT.jar"
-start "交易管理:8081" cmd /c "%JAVA_HOME%\bin\java -jar E:\stock-system\trade-management\target\stock-trade-management-1.0.0-shaded.jar"
+start "交易管理:8081" cmd /c "cd /d E:\stock-system\trade-management&&%JAVA_HOME%\bin\java -jar target\stock-trade-management-1.0.0-shaded.jar"
 start "信息发布:8083" cmd /c "%JAVA_HOME%\bin\java -jar E:\stock-system\online-info-publish\target\online-info-publish-subsys-1.0.0-SNAPSHOT.jar"
 
 timeout /t 25 >nul
