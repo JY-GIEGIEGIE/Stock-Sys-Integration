@@ -13,7 +13,7 @@ spring:
       maximum-pool-size: 10
   sql:
     init:
-      mode: always
+      mode: never
       schema-locations: classpath:schema.sql
   kafka:
     bootstrap-servers: ${KAFKA_BROKERS:localhost:9092}
@@ -36,9 +36,9 @@ app:
     api-base: ${ACCOUNT_API_BASE:http://localhost:8080}
     mock: ${ACCOUNT_API_MOCK:true}
   trading:
-    start-hour: ${TRADING_START_HOUR:9}
-    start-minute: ${TRADING_START_MINUTE:30}
-    end-hour: ${TRADING_END_HOUR:15}
-    end-minute: ${TRADING_END_MINUTE:0}
+    start-hour: ${TRADING_START_HOUR:0}
+    start-minute: ${TRADING_START_MINUTE:0}
+    end-hour: ${TRADING_END_HOUR:23}
+    end-minute: ${TRADING_END_MINUTE:59}
     call-auction-hour: ${CALL_AUCTION_HOUR:9}
     call-auction-minute: ${CALL_AUCTION_MINUTE:25}
