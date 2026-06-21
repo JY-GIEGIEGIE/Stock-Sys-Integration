@@ -28,24 +28,32 @@ app.use("/api/client/alerts", alertsRouter);
 app.use("/api/client/notifications", notificationsRouter);
 app.use("/api/client/central", centralRouter);
 
-// 代理：将 /api/external/* 转发到账户管理系统后端（解决 CORS 问题）
+// 代理：转发外部 API 调用，解决前端跨域问题
 const ACCOUNT_BACKEND = process.env.ACCOUNT_BACKEND || "http://localhost:8080";
-app.all("/api/external/*", async (req, res, next) => {
-  try {
-    const target = `${ACCOUNT_BACKEND}${req.originalUrl}`;
-    const headers = { "Content-Type": "application/json" };
-    const body = req.method !== "GET" && req.method !== "HEAD"
-      ? JSON.stringify(req.body) : undefined;
-    const resp = await fetch(target, { method: req.method, headers, body });
-    const data = await resp.json().catch(() => ({}));
-    res.status(resp.status).json(data);
-  } catch (err) {
-    console.error(`Proxy error for ${req.originalUrl}: ${err.message}`);
-    res.status(502).json({ code: 5000, message: "账户管理系统不可达" });
-  }
-});
+const CENTRAL_BACKEND = process.env.CENTRAL_BACKEND || "http://localhost:8082";
+const MGMT_BACKEND = process.env.MGMT_BACKEND || "http://localhost:8081";
 
-// 静态文件服务：将项目根目录的 index.html + js/ 作为前端页面
+function proxyTo(backend, errorMsg) {
+  return async (req, res) => {
+    try {
+      const target = `${backend}${req.originalUrl}`;
+      const headers = { "Content-Type": "application/json" };
+      const body = req.method !== "GET" && req.method !== "HEAD"
+        ? JSON.stringify(req.body) : undefined;
+      const resp = await fetch(target, { method: req.method, headers, body });
+      const data = await resp.json().catch(() => ({}));
+      res.status(resp.status).json(data);
+    } catch (err) {
+      res.status(502).json({ code: 5000, message: errorMsg });
+    }
+  };
+}
+
+app.all("/api/external/*", proxyTo(ACCOUNT_BACKEND, "账户管理系统不可达"));
+app.all("/api/central-trading/*", proxyTo(CENTRAL_BACKEND, "中央交易系统不可达"));
+app.all("/api/trade-management/*", proxyTo(MGMT_BACKEND, "交易管理系统不可达"));
+
+// 静态文件服务
 app.use(express.static(path.join(__dirname, "..")));
 
 app.use((err, req, res, next) => {
