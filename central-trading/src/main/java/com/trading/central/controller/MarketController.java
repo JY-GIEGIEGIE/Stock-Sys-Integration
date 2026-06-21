@@ -83,18 +83,21 @@ public class MarketController {
         // 3. 获取近期成交流水（最近 10 条，约对应 5 秒轮询周期）
         List<Map<String, Object>> recentTrades = new ArrayList<>();
         try {
-            String sql = "SELECT trade_no, buyer_order_id, seller_order_id, stock_code, trade_price, trade_quantity, trade_time " +
-                         "FROM trade_record WHERE stock_code = ? ORDER BY trade_time DESC LIMIT 10";
+            String sql = "SELECT t.trade_no, t.stock_code, t.trade_price, t.trade_quantity, t.trade_time, " +
+                         "b.account_id AS buyer_account_id, s.account_id AS seller_account_id " +
+                         "FROM trade_record t " +
+                         "LEFT JOIN order_book b ON t.buyer_order_id = b.order_id " +
+                         "LEFT JOIN order_book s ON t.seller_order_id = s.order_id " +
+                         "WHERE t.stock_code = ? ORDER BY t.trade_time DESC LIMIT 10";
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, stockCode);
 
             for (Map<String, Object> row : rows) {
                 Map<String, Object> trade = new LinkedHashMap<>();
                 trade.put("tradeNo", row.get("trade_no"));
-                // 用名称替代 ID
-                String buyerId = row.get("buyer_order_id").toString();
-                String sellerId = row.get("seller_order_id").toString();
-                trade.put("buyerName", accountService.getAccountName(buyerId));
-                trade.put("sellerName", accountService.getAccountName(sellerId));
+                String buyerAccId = row.get("buyer_account_id") != null ? row.get("buyer_account_id").toString() : "";
+                String sellerAccId = row.get("seller_account_id") != null ? row.get("seller_account_id").toString() : "";
+                trade.put("buyerName", accountService.getAccountName(buyerAccId));
+                trade.put("sellerName", accountService.getAccountName(sellerAccId));
                 trade.put("stockCode", row.get("stock_code"));
                 trade.put("dealPrice", new BigDecimal(row.get("trade_price").toString()));
                 trade.put("dealQuantity", Integer.parseInt(row.get("trade_quantity").toString()));
