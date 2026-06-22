@@ -287,6 +287,7 @@ async function publishOrderCommand(order) {
 function buildOrderCommand(order) {
   const value = {
     accountId: order.fundAccountNo || order.accountId,
+    securityAccountNo: order.securityAccountNo || order.secAccNo,
     orderId: order.orderNo || order.orderId,
     stockCode: String(order.stockCode || ""),
     side: order.direction || order.side,
@@ -306,6 +307,7 @@ function buildOrderCommand(order) {
   assertIsoDate(value.timestamp, "timestamp must be an ISO 8601 string");
   if (!Number.isFinite(value.highLimit)) delete value.highLimit;
   if (!Number.isFinite(value.lowLimit)) delete value.lowLimit;
+  if (!value.securityAccountNo) delete value.securityAccountNo;
 
   return value;
 }

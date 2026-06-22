@@ -44,8 +44,12 @@ public class OrderController {
         String side = body.containsKey("direction") ? body.get("direction").toString() :
                       body.containsKey("side") ? body.get("side").toString() : null;
 
+        String securityAccountNo = body.containsKey("securityAccountNo") ? String.valueOf(body.get("securityAccountNo")) :
+                                   body.containsKey("secAccNo") ? String.valueOf(body.get("secAccNo")) : null;
+
         OrderCommandMsg msg = new OrderCommandMsg();
         msg.setAccountId(accountId);
+        msg.setSecurityAccountNo(securityAccountNo);
         msg.setOrderId(orderId);
         msg.setStockCode(body.get("stockCode") != null ? body.get("stockCode").toString() : null);
         msg.setSide(side);

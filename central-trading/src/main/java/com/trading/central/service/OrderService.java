@@ -80,9 +80,9 @@ public class OrderService {
         try {
             if (Side.BUY.name().equals(msg.getSide())) {
                 BigDecimal freezeAmount = msg.getPrice().multiply(new BigDecimal(msg.getQuantity()));
-                accountService.freezeFunds(msg.getAccountId(), freezeAmount);
+                accountService.freezeFunds(msg.getAccountId(), freezeAmount, msg.getOrderId());
             } else {
-                accountService.freezeHolding(msg.getAccountId(), msg.getStockCode(), msg.getQuantity());
+                accountService.freezeHolding(msg.getSecurityAccountNo(), msg.getStockCode(), stockInfo.getStockName(), msg.getQuantity(), msg.getOrderId());
             }
         } catch (Exception err) {
             kafkaProducerService.sendOrderReport(msg.getOrderId(), OrderStatus.REJECTED.name(), "冻结失败: " + err.getMessage());
@@ -94,8 +94,8 @@ public class OrderService {
 
         try {
             jdbcTemplate.update(
-                "INSERT INTO order_book (order_id, account_id, stock_code, side, price, quantity, filled_quantity, remaining_quantity, status, entry_time, update_time, trade_date) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)",
-                msg.getOrderId(), msg.getAccountId(), msg.getStockCode(), msg.getSide(), msg.getPrice(), msg.getQuantity(), msg.getQuantity(), OrderStatus.ACCEPTED.name(), entryTime, entryTime, tradeDate
+                "INSERT INTO order_book (order_id, account_id, security_account_no, stock_code, side, price, quantity, filled_quantity, remaining_quantity, status, entry_time, update_time, trade_date) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)",
+                msg.getOrderId(), msg.getAccountId(), msg.getSecurityAccountNo(), msg.getStockCode(), msg.getSide(), msg.getPrice(), msg.getQuantity(), msg.getQuantity(), OrderStatus.ACCEPTED.name(), entryTime, entryTime, tradeDate
             );
         } catch (Exception err) {
             if (err.getMessage() != null && err.getMessage().contains("Duplicate entry")) {
@@ -105,9 +105,9 @@ public class OrderService {
             }
             try {
                 if (Side.BUY.name().equals(msg.getSide())) {
-                    accountService.releaseFunds(msg.getAccountId(), msg.getPrice().multiply(new BigDecimal(msg.getQuantity())));
+                    accountService.releaseFunds(msg.getAccountId(), msg.getPrice().multiply(new BigDecimal(msg.getQuantity())), msg.getOrderId());
                 } else {
-                    accountService.releaseHolding(msg.getAccountId(), msg.getStockCode(), msg.getQuantity());
+                    accountService.releaseHolding(msg.getSecurityAccountNo(), msg.getStockCode(), stockInfo.getStockName(), msg.getQuantity(), msg.getOrderId());
                 }
             } catch (Exception rollbackErr) {
                 log.error("[OrderService] 冻结回滚失败: {}", msg.getOrderId(), rollbackErr);
@@ -120,6 +120,7 @@ public class OrderService {
         OrderEntry orderEntry = new OrderEntry();
         orderEntry.setOrderId(msg.getOrderId());
         orderEntry.setAccountId(msg.getAccountId());
+        orderEntry.setSecurityAccountNo(msg.getSecurityAccountNo());
         orderEntry.setStockCode(msg.getStockCode());
         orderEntry.setSide(msg.getSide());
         orderEntry.setPrice(msg.getPrice());
@@ -153,7 +154,7 @@ public class OrderService {
         }
 
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-            "SELECT order_id, account_id, stock_code, side, price, quantity, filled_quantity, remaining_quantity, status FROM order_book WHERE order_id = ?",
+            "SELECT order_id, account_id, security_account_no, stock_code, side, price, quantity, filled_quantity, remaining_quantity, status FROM order_book WHERE order_id = ?",
             msg.getOrderId()
         );
 
@@ -179,9 +180,12 @@ public class OrderService {
 
         try {
             if (Side.BUY.name().equals(order.get("side").toString())) {
-                accountService.releaseFunds(order.get("account_id").toString(), price.multiply(new BigDecimal(remainQty)));
+                accountService.releaseFunds(order.get("account_id").toString(), price.multiply(new BigDecimal(remainQty)), msg.getOrderId());
             } else {
-                accountService.releaseHolding(order.get("account_id").toString(), order.get("stock_code").toString(), remainQty);
+                String secAcc = order.get("security_account_no") != null ? order.get("security_account_no").toString() : null;
+                StockInfo si = stockService.getStockInfo(order.get("stock_code").toString());
+                String sName = si != null ? si.getStockName() : order.get("stock_code").toString();
+                accountService.releaseHolding(secAcc, order.get("stock_code").toString(), sName, remainQty, msg.getOrderId());
             }
         } catch (Exception err) {
             log.error("[OrderService] 撤单释放资源失败: {}", msg.getOrderId(), err);

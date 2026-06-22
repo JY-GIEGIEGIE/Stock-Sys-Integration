@@ -83,6 +83,7 @@ router.post("/", async (req, res, next) => {
         orderId: body.orderNo || `O${result.insertId}`,
         fundAccountNo: body.fundAccountNo,
         accountId: body.fundAccountNo,
+        securityAccountNo: body.securityAccountNo,
         stockCode: body.stockCode,
         direction: body.orderSide,
         side: body.orderSide,
