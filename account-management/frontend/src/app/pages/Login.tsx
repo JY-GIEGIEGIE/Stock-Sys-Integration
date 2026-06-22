@@ -45,6 +45,9 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-slate-100 p-4">
       <Card className="w-full max-w-md shadow-lg border-slate-200">
         <CardHeader className="text-center pb-2">
+          <div className="text-left -mt-1 mb-1">
+            <a href="http://localhost:3000/" className="text-sm text-slate-500 hover:text-red-600 transition-colors">← 返回导航</a>
+          </div>
           <div className="flex justify-center mb-3">
             <div className="p-3 bg-red-600 rounded-full">
               <Briefcase className="w-8 h-8 text-white" />

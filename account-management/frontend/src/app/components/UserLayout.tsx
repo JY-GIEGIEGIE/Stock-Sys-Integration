@@ -104,6 +104,7 @@ export function UserLayout() {
           </button>
 
           <div className="flex items-center gap-4">
+            <a href="http://localhost:3000/" className="hidden sm:flex text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full hover:bg-slate-200 transition-colors">← 返回导航</a>
             <div className="hidden sm:flex items-center text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full">
               <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
               账户服务

@@ -1,7 +1,8 @@
 <template>
   <div id="app" class="app-shell">
     <header class="topbar">
-      <router-link class="brand" to="/">网上信息发布</router-link>
+      <router-link class="brand" to="/home">网上信息发布</router-link>
+      <router-link v-if="route.path !== '/'" class="ghost-btn back-nav" to="/">← 返回导航</router-link>
 
       <nav class="subsystem-links">
         <a :href="accountSysUrl" target="_blank" rel="noopener noreferrer">账户系统</a>
@@ -28,7 +29,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from './stores/user'
 
 const accountSysUrl = 'http://localhost:5173'
@@ -36,6 +37,7 @@ const tradeClientUrl = 'http://localhost:8090'
 const tradeMgmtUrl = 'http://localhost:8081'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const fundAccNoInput = ref('')
 
@@ -50,7 +52,7 @@ const applyFundAccNo = () => {
   if (!v) return
   userStore.setGlobalUserId(v)
   userStore.setRole('STANDARD')  // 登录成功后最低 STANDARD
-  router.push('/')
+  router.push('/home')
 }
 
 const handleLogout = () => {

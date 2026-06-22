@@ -90,6 +90,7 @@ export function Layout() {
           </button>
 
           <div className="flex items-center gap-4">
+            <a href="http://localhost:3000/" className="hidden sm:flex text-sm font-medium text-slate-600 bg-slate-100 px-4 py-1.5 rounded-full hover:bg-slate-200 transition-colors">← 返回导航</a>
             <NavLink to="/user" className="hidden sm:flex text-sm font-medium text-red-600 bg-red-50 px-4 py-1.5 rounded-full hover:bg-red-100 transition-colors">
               切换至投资者账户端
             </NavLink>

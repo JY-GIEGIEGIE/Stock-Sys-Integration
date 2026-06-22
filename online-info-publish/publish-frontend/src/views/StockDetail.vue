@@ -1,6 +1,6 @@
 <template>
   <div class="stock-detail">
-    <router-link to="/" class="back-link">← 返回行情列表</router-link>
+    <router-link to="/home" class="back-link">← 返回行情列表</router-link>
     <!-- 顶部信息卡：所有角色（含 GUEST）均可见 -->
     <header class="quote-header card">
       <div class="header-main">
