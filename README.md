@@ -1,15 +1,17 @@
 # 股票交易系统 — 全系统集成联调版
 
+> 📖 **网上信息发布系统 · 用户手册**：[`online-info-publish/USER_MANUAL.md`](online-info-publish/USER_MANUAL.md)
+
 > 6 个子系统在本机协同运行的完整集成环境。一键启动，开箱即用。
 
 ## 分支说明
 
-| 分支 | 归属 / 用途 |
-|------|------------|
-| `main` | 稳定保底版：mock 模式，可脱账户系统独立演示（16 位测试账号），随时可回退。 |
-| `feat/real-settlement` | **由「网上信息发布系统」（本组）策划并实现的全系统真集成版本。** 在 `main` 之上完成：中央交易对接账户系统**真实结算**（资金/持仓真实变动、`securityAccountNo` 全链路贯通）、网上信息发布系统改为**通过 Kafka 订阅 `webinfo.trade.report`** 获取成交流、全系统**导航门户页**与各子系统返回键、FA 账号登录修复等。 |
+> **当前以 `feat/real-settlement` 为主开发与演示分支；`main` 作为稳定回退版保留。**
 
-> 网上信息发布系统**用户手册**见 [`online-info-publish/USER_MANUAL.md`](online-info-publish/USER_MANUAL.md)。
+| 分支 | 状态 | 说明 |
+|------|------|------|
+| `feat/real-settlement` | **当前主用** | 由「网上信息发布系统」（本组）策划并实现的全系统**真集成**版本。相比 `main` 新增：中央交易对接账户系统**真实结算**（资金/持仓真实变动、`securityAccountNo` 全链路贯通）；网上信息发布后端改为**通过 Kafka 订阅 `webinfo.trade.report`** 获取成交流（驱动主力/K线，不再靠 REST 轮询取成交）；全系统**导航门户页**与各子系统返回键；FA 账号登录修复等。 |
+| `main` | 稳定回退 | mock 模式：脱账户系统也能独立演示（16 位测试账号），随时可 `git checkout main` 回退。 |
 
 ## 目录
 
