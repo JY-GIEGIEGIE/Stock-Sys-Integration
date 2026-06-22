@@ -94,8 +94,12 @@ else
 fi
 
 # =========== 5. 中央交易 CT（等 8082）===========
-say "[5/9] 启动 中央交易 CT ..."
+# CALL_AUCTION_HOUR/MINUTE=0：把集合竞价时间设为“已过去”，让 CallAuctionScheduler
+# 开机即判定“已过集合竞价→直接进连续竞价”，全天连续撮合。否则 9:25 之前会进集合竞价
+# (只收单不成交)，演示时看不到成交流水。
+say "[5/9] 启动 中央交易 CT（连续竞价，禁用集合竞价时段）..."
 DB_USER=root DB_PASSWORD=root DB_HOST=localhost DB_PORT=3306 DB_DATABASE=central_trading \
+  CALL_AUCTION_HOUR=0 CALL_AUCTION_MINUTE=0 \
   nohup "$JAVA" -jar "$ROOT/central-trading/target/central-trading-1.0.0-SNAPSHOT.jar" > "$LOG/ct.log" 2>&1 &
 wait_port 8082 "中央交易" 60
 
