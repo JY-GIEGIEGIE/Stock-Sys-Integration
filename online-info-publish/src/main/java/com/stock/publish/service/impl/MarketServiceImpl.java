@@ -187,6 +187,19 @@ public class MarketServiceImpl implements MarketService {
             long quantity
     ) {}
 
+    @Override
+    public void ingestTrade(String stockCode, String buyerName, String sellerName, BigDecimal price, long quantity) {
+        String buyer = buyerName != null ? buyerName : "";
+        String seller = sellerName != null ? sellerName : "";
+        try {
+            topTraderEngine.accumulate(stockCode, buyer, seller, quantity);
+        } catch (UnsupportedOperationException ignored) {}
+        TransactionRecord tr = new TransactionRecord(stockCode, LocalDateTime.now(), buyer, seller, price, quantity);
+        try {
+            redisTemplate.opsForList().rightPush("tick:" + stockCode, objectMapper.writeValueAsString(tr));
+        } catch (JsonProcessingException ignored) {}
+    }
+
     @Scheduled(cron = "*/5 * * * * *")
     @Override
     public void refreshQuotes() {
@@ -217,24 +230,8 @@ public class MarketServiceImpl implements MarketService {
             if (dealPrice != null) {
                 lastPrice = new BigDecimal(dealPrice.toString());
             }
-
-            // 主力累加 & 推 tick
-            LocalDateTime now = LocalDateTime.now();
-            for (Object t : (List<?>) tradesObj) {
-                Map<String, Object> trade = (Map<String, Object>) t;
-                String buyer = String.valueOf(trade.getOrDefault("buyerName", ""));
-                String seller = String.valueOf(trade.getOrDefault("sellerName", ""));
-                BigDecimal price = new BigDecimal(trade.getOrDefault("dealPrice", "0").toString());
-                long qty = Long.parseLong(trade.getOrDefault("dealQuantity", "0").toString());
-                try {
-                    topTraderEngine.accumulate(code, buyer, seller, qty);
-                } catch (UnsupportedOperationException ignored) {}
-                TransactionRecord tr = new TransactionRecord(code, now, buyer, seller, price, qty);
-                try {
-                    redisTemplate.opsForList().rightPush("tick:" + code,
-                            objectMapper.writeValueAsString(tr));
-                } catch (JsonProcessingException ignored) {}
-            }
+            // 主力累加与 K线 tick 改由 Kafka 消费 webinfo.trade.report 驱动
+            // （见 com.stock.publish.kafka.WebTradeReportConsumer），此处仅取最新价与盘口。
         }
 
         // 涨跌幅
