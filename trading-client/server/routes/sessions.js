@@ -6,7 +6,7 @@ const router = express.Router();
 const SESSION_MINUTES = 30;
 
 function isAccountNo(value) {
-  return typeof value === "string" && /^\d{16}$/.test(value);
+  return typeof value === "string" && /^[A-Za-z0-9]{6,20}$/.test(value);
 }
 
 function isSecurityAccountNo(value) {

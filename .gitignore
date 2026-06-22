@@ -22,3 +22,7 @@ kafka-logs/
 # 集成期诊断 / 数据修复脚本
 fix-stock-data.py
 verify-names.py
+
+# Redis 持久化文件
+*.rdb
+dump.rdb

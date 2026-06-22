@@ -48,9 +48,11 @@ wait_port(){ local p="$1" n="$2" t="${3:-60}" i=0
   done
   say "  !! $n :$p 在 ${t}s 内未监听"; return 1; }
 
-# =========== 0. 清场：杀掉所有 java + node（含旧的孤儿/重复进程，防内存堆积）===========
-say "[0/9] 清场：停掉所有 java / node ..."
+# =========== 0. 清场：杀掉所有 java + node + 残留 auto-trade.sh（含旧孤儿/重复进程，防累积）===========
+say "[0/9] 清场：停掉所有 java / node + 残留 auto-trade.sh ..."
 powershell -NoProfile -Command "Get-Process java,node -ErrorAction SilentlyContinue | Stop-Process -Force" 2>/dev/null
+# auto-trade.sh 是 bash 进程、不在 java/node 里，需按命令行单独杀（否则每次启动会叠加，曾累积到 32 个）
+powershell -NoProfile -Command "Get-CimInstance Win32_Process | Where-Object { \$_.CommandLine -like '*auto-trade.sh*' } | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -EA SilentlyContinue }" 2>/dev/null
 sleep 4
 
 # =========== 1. 基础设施：MySQL + Redis（不在则启动）===========

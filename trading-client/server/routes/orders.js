@@ -16,7 +16,7 @@ const ORDER_FIELDS = {
 router.get("/", async (req, res, next) => {
   try {
     const fundAccountNo = String(req.query.fundAccountNo || "");
-    if (!/^\d{16}$/.test(fundAccountNo)) {
+    if (!/^[A-Za-z0-9]{6,20}$/.test(fundAccountNo)) {
       return res.status(400).json({ ok: false, message: "Invalid fundAccountNo" });
     }
 
