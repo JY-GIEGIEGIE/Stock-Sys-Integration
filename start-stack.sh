@@ -77,6 +77,14 @@ else
   say "[2/9] 跳过数据修正（缺脚本或 python）"
 fi
 
+# =========== 2b. 真结算基线：播种持仓 + 复位资金 + 清幂等日志 ===========
+# 真结算（ACCOUNT_API_MOCK=false）下卖方必须有券可冻；此脚本把 account_db 复位到演示基线
+# （每证券账户每只股 100000 股、资金复位、清 holding_change_log/fund_transaction_log）。
+if [ -f "$ROOT/seed-realsettle.py" ] && command -v /d/python3.11.8/python >/dev/null 2>&1; then
+  say "[2b]  播种真结算基线(持仓/资金/幂等日志) ..."
+  /d/python3.11.8/python "$ROOT/seed-realsettle.py" >/dev/null 2>&1 && say "  基线 OK" || say "  (播种失败，确认 pymysql)"
+fi
+
 # =========== 3. Kafka（必须用 .sh，等 9092 就绪）===========
 say "[3/9] 启动 Kafka(.sh) ..."
 ( cd "$ROOT/kafka_2.13-3.6.1" \
@@ -101,7 +109,7 @@ fi
 # (只收单不成交)，演示时看不到成交流水。
 say "[5/9] 启动 中央交易 CT（连续竞价，禁用集合竞价时段）..."
 DB_USER=root DB_PASSWORD=root DB_HOST=localhost DB_PORT=3306 DB_DATABASE=central_trading \
-  CALL_AUCTION_HOUR=0 CALL_AUCTION_MINUTE=0 \
+  CALL_AUCTION_HOUR=0 CALL_AUCTION_MINUTE=0 ACCOUNT_API_MOCK=false \
   nohup "$JAVA" -jar "$ROOT/central-trading/target/central-trading-1.0.0-SNAPSHOT.jar" > "$LOG/ct.log" 2>&1 &
 wait_port 8082 "中央交易" 60
 
