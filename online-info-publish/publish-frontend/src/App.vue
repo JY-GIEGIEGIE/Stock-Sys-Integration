@@ -1,6 +1,6 @@
 <template>
   <div id="app" class="app-shell">
-    <header class="topbar">
+    <header v-if="route.path !== '/'" class="topbar">
       <router-link class="brand" to="/home">网上信息发布</router-link>
       <router-link v-if="route.path !== '/'" class="ghost-btn back-nav" to="/">← 返回导航</router-link>
 
