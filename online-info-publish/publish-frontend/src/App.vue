@@ -11,13 +11,16 @@
       </nav>
 
       <div class="actions">
-        <span v-if="userStore.globalUserId" class="role-pill">{{ roleLabel }}</span>
-        <template v-if="!userStore.globalUserId">
+        <template v-if="userStore.globalUserId">
+          <span class="account-badge">{{ displayAccount }}</span>
+          <span class="role-pill">{{ roleLabel }}</span>
+          <button class="ghost-btn" type="button" @click="handleLogout">退出</button>
+        </template>
+        <template v-else>
           <a class="ghost-btn" :href="accountSysUrl + '/login'" target="_blank" rel="noopener noreferrer">登录</a>
           <input v-model="fundAccNoInput" class="fund-input"
                  placeholder="登录后粘贴资金账号" @keyup.enter="applyFundAccNo" />
         </template>
-        <button v-else class="ghost-btn" type="button" @click="handleLogout">退出</button>
       </div>
     </header>
 
@@ -45,6 +48,13 @@ const roleLabel = computed(() => {
   if (userStore.isPremiumVip) return 'PREMIUM_VIP'
   if (userStore.isStandard) return 'STANDARD'
   return 'GUEST'
+})
+
+const displayAccount = computed(() => {
+  const id = userStore.globalUserId
+  if (!id) return ''
+  if (id.length <= 8) return id
+  return id.slice(0, 4) + '···' + id.slice(-4)
 })
 
 const applyFundAccNo = () => {
@@ -118,12 +128,22 @@ const handleLogout = () => {
 
 .role-pill,
 .primary-btn,
-.ghost-btn {
+.ghost-btn,
+.account-badge {
   border-radius: 4px;
   padding: 8px 12px;
   border: 1px solid transparent;
   font-size: 0.92rem;
   cursor: pointer;
+}
+
+.account-badge {
+  background: #e8f0fe;
+  border-color: #a8c8fa;
+  color: #005aa6;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  cursor: default;
 }
 
 .role-pill {
