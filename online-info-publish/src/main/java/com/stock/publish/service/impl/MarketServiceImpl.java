@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -37,6 +39,8 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class MarketServiceImpl implements MarketService {
 
+    private static final Logger log = LoggerFactory.getLogger(MarketServiceImpl.class);
+
     private final StringRedisTemplate redisTemplate;
     private final RedissonClient redissonClient;
     private final SyncStockInfoMapper stockInfoMapper;
@@ -50,9 +54,7 @@ public class MarketServiceImpl implements MarketService {
     @Value("${subsystems.central-trade.snapshot-path:/api/central-trading/market/snapshot}")
     private String snapshotPath;
 
-    private static final List<String> MOCK_STOCKS = List.of(
-            "000001", "000002", "000858", "600000", "600016",
-            "600036", "600519", "600900", "601398", "601988");
+    private static final int REFRESH_BATCH_SIZE = 50;
 
     public MarketServiceImpl(StringRedisTemplate redisTemplate,
                              RedissonClient redissonClient,
@@ -203,11 +205,19 @@ public class MarketServiceImpl implements MarketService {
     @Scheduled(cron = "*/5 * * * * *")
     @Override
     public void refreshQuotes() {
-        for (String code : MOCK_STOCKS) {
+        log.info("refreshQuotes 开始, 共刷新...");
+        // 动态从数据库读取股票列表，不再硬编码——CT 新增股票后可自动感知
+        List<SyncStockInfo> allStocks = stockInfoMapper.selectList(null);
+        if (allStocks == null || allStocks.isEmpty()) return;
+        int count = 0;
+        for (SyncStockInfo stock : allStocks) {
             try {
-                fetchAndCacheQuote(code);
+                fetchAndCacheQuote(stock.getStockCode());
+                count++;
+                // 每轮最多刷新 REFRESH_BATCH_SIZE 只，防止股票过多时 5 秒窗口溢出
+                if (count >= REFRESH_BATCH_SIZE) break;
             } catch (Exception e) {
-                // 中央交易系统未就绪时静默跳过，保留 Redis 中上次数据
+                log.error("refreshQuotes 刷新 {} 失败: {}", stock.getStockCode(), e.toString());
             }
         }
     }
@@ -236,10 +246,13 @@ public class MarketServiceImpl implements MarketService {
 
         // 涨跌幅
         BigDecimal yClose = info.getYesterdayClose();
-        BigDecimal rate = lastPrice.subtract(yClose)
-                .divide(yClose, 4, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
-        String changeRate = (rate.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "") + rate + "%";
+        String changeRate = "0.00%";
+        if (yClose != null && yClose.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal rate = lastPrice.subtract(yClose)
+                    .divide(yClose, 4, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+            changeRate = (rate.compareTo(BigDecimal.ZERO) >= 0 ? "+" : "") + rate + "%";
+        }
 
         // 盘口（中央交易系统真实数据）
         Object bidP = body.get("bidPrice");
@@ -258,7 +271,10 @@ public class MarketServiceImpl implements MarketService {
         try {
             redisTemplate.opsForValue().set("quote:" + code,
                     objectMapper.writeValueAsString(quote), 5, TimeUnit.SECONDS);
-        } catch (JsonProcessingException ignored) {}
+            log.info("quote:{} 已刷新 bid={} ask={} lastPrice={}", code, quote.getBidPrice(), quote.getAskPrice(), quote.getLastPrice());
+        } catch (JsonProcessingException ignored) {
+            log.warn("quote:{} JSON序列化失败", code);
+        }
     }
 
     @Scheduled(cron = "0 */5 * * * *")
@@ -270,7 +286,12 @@ public class MarketServiceImpl implements MarketService {
                 .minusMinutes(5)
                 .truncatedTo(ChronoUnit.MINUTES);
 
-        for (String code : MOCK_STOCKS) {
+        // 动态从数据库读取股票列表
+        List<SyncStockInfo> allStocks = stockInfoMapper.selectList(null);
+        if (allStocks == null || allStocks.isEmpty()) return;
+
+        for (SyncStockInfo stock : allStocks) {
+            String code = stock.getStockCode();
             String tickKey = "tick:" + code;
             List<String> tickJsons = redisTemplate.opsForList().range(tickKey, 0, -1);
             if (tickJsons == null || tickJsons.isEmpty()) continue;

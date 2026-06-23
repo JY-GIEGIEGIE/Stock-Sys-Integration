@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import org.springframework.scheduling.annotation.Scheduled;
+
 import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.util.List;
@@ -35,6 +37,12 @@ public class StockServiceImpl implements StockService {
 
     @PostConstruct
     public void init() {
+        syncFromCentralSystem();
+    }
+
+    /** 定时从中央交易系统重新同步股票字典（每 60 秒），使 CT 新增/修改的股票自动反映到本系统。 */
+    @Scheduled(fixedRate = 60_000)
+    public void scheduledSync() {
         syncFromCentralSystem();
     }
 
@@ -75,12 +83,27 @@ public class StockServiceImpl implements StockService {
                 info.setStockCode(code);
                 info.setStockName(String.valueOf(s.getOrDefault("stockName", "")));
                 info.setStockType(0);
-                Object yc = s.get("yesterdayClose");
+                // CT API 返回字段名为 previousClose（非 yesterdayClose），两者均尝试兼容
+                Object yc = s.get("previousClose");
+                if (yc == null) yc = s.get("yesterdayClose");
                 info.setYesterdayClose(yc != null ? new BigDecimal(yc.toString()) : BigDecimal.ZERO);
                 info.setLimitRate(new BigDecimal("0.1000"));
                 info.setStatus(0);
                 info.setPinyinAbbr(toPinyinAbbr(info.getStockName()));
-                stockInfoMapper.insert(info);
+
+                // 已存在则更新，不存在则插入——支持 CT 端新增股票后定时同步自动感知
+                SyncStockInfo existing = stockInfoMapper.selectById(code);
+                if (existing != null) {
+                    // 仅当 CT 返回有效昨收时才更新（避免 CT 字段缺失导致除零异常）
+                    if (info.getYesterdayClose().compareTo(BigDecimal.ZERO) > 0) {
+                        existing.setYesterdayClose(info.getYesterdayClose());
+                    }
+                    existing.setStockName(info.getStockName());
+                    existing.setPinyinAbbr(info.getPinyinAbbr());
+                    stockInfoMapper.updateById(existing);
+                } else {
+                    stockInfoMapper.insert(info);
+                }
             }
         } catch (Exception e) {
             // 中央交易系统未就绪时保留 DB 已有数据
